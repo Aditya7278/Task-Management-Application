@@ -1,0 +1,311 @@
+<!-- Develop a complex task management application utilizing DOM manipulation, higher-order functions, array methods, and form handling. This application facilitates adding, deleting, filtering, and editing tasks within an interactive interface. Users can input task details such as title, description, and status via a form, with validation ensuring data integrity. Upon submission, tasks dynamically populate a list, offering options to mark as complete, delete, or edit. Additionally, filters enable users to view tasks based on status, enhancing task organization. Implement advanced functionality allowing users to edit existing tasks directly within the application, providing a seamless task management experience. This application serves as a comprehensive tool for efficient task management, showcasing proficiency in web development techniques. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body{
+            font-family: monospace;
+        }
+        h1,h2{
+            text-align: center;
+        }
+        form{
+            display: flex;
+            flex-direction: column;
+            margin: auto;
+            width: 25%;
+            box-shadow: 0px 1px 5px black;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+        #create-btn{
+            width: fit-content;
+            padding: 5px 20px;
+            border-radius: 5px;
+            margin: auto;
+            margin-top: 5px;
+            &:hover{
+                cursor: pointer;
+                background-color: greenyellow;
+            }
+        }
+        form>input,textarea,select{
+             margin-bottom: 15px;
+             font-size: 16px;
+        }
+        #description{
+            height: 60px;
+            max-width: 100%;
+            max-height: 200px
+        }
+
+        #filter-parent{
+            margin-left: 15%;
+        }
+        #filter-parent>label{
+            font-size: 18px;
+        }
+        #filter-parent>select:hover{
+            cursor: pointer;
+            background-color: rgba(128, 128, 128, 0.213);
+        }   
+
+        #task-list {
+            width: 70%; 
+            margin: auto; 
+            border-collapse: collapse;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.541);
+            border: 2px solid grey;
+        }
+        #task-list thead {
+            background-color: #f2f2f2;
+            font-weight: bold; 
+            font-size: 18px;
+        }
+        #task-list th, #task-list td {
+            padding: 12px 15px; 
+            text-align: left;
+            border: 1px solid #7b7b7baa; 
+        }
+        #task-list thead td:nth-child(3)
+        {
+            display: flex;
+            justify-content: space-between; 
+            border: none;
+        }
+        #sort_by_status{
+           border: transparent;
+           &:hover{
+            cursor: pointer;
+            background-color: rgba(128, 128, 128, 0.169);
+           }
+        }
+
+        .delete-btn {
+            background-color: #ff4d4d; 
+            color: white;
+            margin-right: 10px;
+        }
+
+        .delete-btn:hover {
+            background-color: #ff1a1a; 
+            transform: scale(1.05); 
+        }
+
+       
+        .edit-btn {
+            background-color: #4d94ff; 
+            color: white; 
+            margin-right: 10px;
+        }
+
+        .edit-btn:hover {
+            background-color: #007acc; 
+            transform: scale(1.05);
+        }
+
+       
+        .mark-btn {
+            background-color: #4caf50; 
+            color: white;
+        }
+        .mark-btn:hover {
+            background-color: #388e3c; 
+            transform: scale(1.05); 
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Task Management Application</h1>
+    <form id="form">
+        <h2 >Create Task</h2>
+        <label for="">Title:</label>
+        <input type="text" id="title" required>
+
+        <label for="">Description (optional):</label>
+        <textarea name="desc" id="description"></textarea>
+
+        <label for="task-status">Task Status:</label>
+        <select id="task-status">
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+
+
+        <button id="create-btn">Create</button>
+    </form>
+
+    <h2 style="margin-bottom: 10px; margin-top: 50px;">Task List</h2>
+    <hr style="width: 70%;">
+    <div id="filter-parent">
+        <label for="">Filter:</label>
+        <select id="filter">
+            <option>Default</option>
+            <option value="Not Started">Not Started</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+        </select>
+    </div>
+    <table id="task-list" border="1">
+        <thead>
+            <td>Task</td>
+            <td>Description</td>
+            <td>Status <button id="sort_by_status"><img height="20px" width="20px" src="https://cdn-icons-png.flaticon.com/128/10407/10407118.png" alt=""></button></td>
+            <td>Actions</td>
+        </thead>
+        <tbody id="task"></tbody>
+    </table>
+</body>
+
+<script>
+    let form = document.querySelector("#form")
+    let taskList = document.querySelector("#task")
+    
+    let tasks = []
+
+    form.addEventListener("submit", function(event) {
+        event.preventDefault()
+
+        let title = document.querySelector("#title").value
+        let description = document.querySelector("#description").value
+        let status = document.querySelector("#task-status").value
+
+       
+        let isTitleUnique = true
+        for (let i = 0; i < tasks.length; i++) 
+        {
+            if (tasks[i].title === title) 
+            {
+                isTitleUnique = false
+                break
+            }
+        }
+
+        if (isTitleUnique) 
+        {
+            tasks.push({ title, description, status })
+            form.reset()
+            createList(tasks)
+        } 
+        else 
+        {
+            alert("The title must be unique. Please enter a different title.")
+        }
+    })
+
+    function createList(tasks)
+    {
+        taskList.innerHTML = ""
+
+        tasks.forEach((task,index) => {
+            let row = document.createElement("tr")
+
+            let data1 = document.createElement("td")
+            let data2 = document.createElement("td")
+            let data3 = document.createElement("td")
+            let action = document.createElement("td")
+
+            let deleteButton = document.createElement("button")
+            deleteButton.textContent = "Delete"
+            deleteButton.classList.add("delete-btn")
+            deleteButton.addEventListener("click", function() {
+                deleteTask(index)
+            })
+
+            let editButton = document.createElement("button")
+            editButton.innerText = "Edit"
+            editButton.classList.add("edit-btn")
+            editButton.addEventListener("click", function() {
+                editTask(index)
+            })
+
+       
+            let markButton = document.createElement("button")
+            markButton.innerText = "Mark as Complete"
+            markButton.classList.add("mark-btn")
+            markButton.addEventListener("click", function() {
+                markTask(index)
+            });
+
+            action.appendChild(deleteButton) 
+            action.appendChild(editButton) 
+            action.appendChild(markButton) 
+            
+            data1.textContent = task.title
+            data2.textContent = task.description
+            data3.textContent = task.status
+
+            row.appendChild(data1)
+            row.appendChild(data2)
+            row.appendChild(data3)
+            row.appendChild(action)
+
+            taskList.appendChild(row)
+        })
+    }
+
+    let sort = document.querySelector("#sort_by_status");
+    sort.addEventListener("click", function() {
+    tasks.sort((a, b) => {
+        const statusOrder = {
+            "Not Started": 1,
+            "In Progress": 2, 
+            "Completed": 3,
+        };
+        
+        return statusOrder[a.status] - statusOrder[b.status];
+    }); 
+    
+    createList(tasks) 
+})
+ 
+    function deleteTask(index) 
+    {
+      tasks.splice(index, 1)
+      createList(tasks)
+    }
+
+    function editTask(index) 
+    {
+        let task = tasks[index]
+        let newTitle = prompt("Edit title:", task.title)
+        let newDescription = prompt("Edit description:", task.description)
+        let newStatus = prompt("Edit status (Pending, Not Started, In Progress):", task.status)
+
+        
+        if (newTitle !== null) task.title = newTitle
+        if (newDescription !== null) task.description = newDescription
+        if (newStatus !== null) task.status = newStatus
+
+        createList(tasks)
+    }
+
+    function markTask(index) 
+    {
+        tasks[index].status = "Completed"
+        createList(tasks)
+    }
+
+    let filter = document.querySelector("#filter")
+    filter.addEventListener("change", filteredTasks)
+
+    function filteredTasks()
+    {
+        let condition = filter.value
+        if(condition == "Default")
+        {
+            createList(tasks)
+        }
+        else{
+            let filteredTasks = tasks.filter(task => task.status == condition )
+            createList(filteredTasks)
+        }
+    }
+</script>
+</html>
